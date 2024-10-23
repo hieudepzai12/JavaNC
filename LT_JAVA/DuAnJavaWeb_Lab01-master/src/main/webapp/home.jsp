@@ -44,7 +44,7 @@
                         <div class="card-footer">
                             <div class="row">
                                 <div class="col">
-                                    <p class="btn btn-danger btn-block"><%=fmt.format(x.getGia())%> Đ </p>
+                                    <p class="btn btn-danger btn-block"><%=fmt.format(x.getGia())%>Đ </p>
                                 </div>
                                 <div class="col">
                                     <a href="#" class="btn btn-success btn-block">Add to cart</a>
