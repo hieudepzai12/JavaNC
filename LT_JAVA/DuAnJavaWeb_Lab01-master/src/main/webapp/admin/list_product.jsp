@@ -12,6 +12,10 @@
 <jsp:include page="../shared/header.jsp" />
              
 <jsp:include page="../shared/nav.jsp" />
+<jsp:include page="../shared/Notification.jsp" />
+
+
+
 
 
 <div class="container">
@@ -33,14 +37,17 @@
             ArrayList<Hoa> dsHoa=(ArrayList<Hoa>) request.getAttribute("dsHoa");
             for (Hoa x: dsHoa){
            %>
-        <tr>
+           <tr>
             <td><%=x.getTenhoa()%></td>
             <td><%=fmt.format(x.getGia())%>Đ</td>
             <td> <img src="assets/images/products/<%=x.getHinh()%>" style="width: 100px">  </td>
             <td><%=x.getMaloai()%></td>
             <td>
-                <a href="ManageProduct?action=edit&mahoa= <%=x.getMahoa()%>" class="btn btn-secondary"> <i class="bi bi-pencil-square"></i> Sửa</a>
-                 <a href="ManageProduct?action=delete&mahoa= <%=x.getMahoa()%>" class="btn btn-danger"> <i class="bi bi-trash"></i> Xoá</a>
+                <a href="ManageProduct?action=EDIT&mahoa=<%=x.getMahoa()%>" class="btn btn-secondary"> <i class="bi bi-pencil-square"></i> Sửa</a>
+                 <a href="ManageProduct?action=DELETE&mahoa=<%=x.getMahoa()%>" class="btn btn-danger"
+                    onclick="return confirm('Bạn có đồng ý xóa không?')"
+                    >
+                     <i class="bi bi-trash"></i> Xoá</a>
             </td>
         </tr>    
         <%

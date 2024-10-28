@@ -8,16 +8,22 @@ import dao.HoaDAO;
 import dao.LoaiDAO;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Paths;
+import java.sql.Date;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+import model.Hoa;
 
 /**
  *
  * @author ACER
  */
+@MultipartConfig
 @WebServlet(name = "ManageProduct", urlPatterns = {"/ManageProduct"})
 public class ManageProduct extends HttpServlet {
 
@@ -34,17 +40,18 @@ public class ManageProduct extends HttpServlet {
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         response.setContentType("text/html;charset=UTF-8");
-        
-        HoaDAO hoaDAO=new HoaDAO();
-        LoaiDAO loaiDAO=new LoaiDAO();
+
+        HoaDAO hoaDAO = new HoaDAO();
+        LoaiDAO loaiDAO = new LoaiDAO();
+
         String action = "LIST";
-        if(request.getParameter("action")!=null)
-        {
-            action =request.getParameter("action");
+        if (request.getParameter("action") != null) {
+            action = request.getParameter("action");
         }
-        
+
+        String method = request.getMethod();
         switch (action) {
-            case "LIST": 
+            case "LIST":
                 //Trả về giao diện liệt kê danh sách sản phẩm quản trị
 //                System.out.println("LIST");
                 request.setAttribute("dsHoa", hoaDAO.getAll());
@@ -53,20 +60,91 @@ public class ManageProduct extends HttpServlet {
             case "ADD":
                 //Trả về giao diện thêm mới 
 //                System.out.println("ADD");
-                request.setAttribute("dsLoai", loaiDAO.getAll());
-                request.getRequestDispatcher("admin/add_product.jsp").forward(request, response);
+
+                if (method.equals("GET")) {
+                    request.setAttribute("dsLoai", loaiDAO.getAll());
+                    request.getRequestDispatcher("admin/add_product.jsp").forward(request, response);
+                } else if (method.equals("POST")) {
+                    //Xử lý thêm mới sản phẩm
+                    //b1 Lấy thông tin sản phẩm cần thêm
+                    String tenhoa = request.getParameter("tenhoa");
+                    double gia = Double.parseDouble(request.getParameter("gia"));
+                    Part part = request.getPart("hinh");
+                    int maloai = Integer.parseInt(request.getParameter("maloai"));
+                    //b2. Xử lý upload file ảnh
+
+                    String realPath = request.getServletContext().getRealPath("assets/images/products");
+                    String filename = Paths.get(part.getSubmittedFileName()).getFileName().toString();
+                    part.write(realPath + "/" + filename);
+                    //b3 Thêm sản phẩm vào CSDL
+                    Hoa objInsert = new Hoa(0, tenhoa, gia, filename, maloai, new Date((new java.util.Date().getTime())));
+                    if (hoaDAO.Insert(objInsert)) {
+                        //thông báo thêm thành công
+                        request.setAttribute("success", "Thao tác thêm sản phẩm thành công");
+                    } else {
+                        //Thông báo thêm thất bại
+                        request.setAttribute("error", "Thao tác thêm sản phẩm thất bại");
+                    }
+                    // chuyển tiếp  người dùng về action=LIST để liệt kê lại danh sách sản phẩm
+                    request.getRequestDispatcher("ManageProduct?action=LIST").forward(request, response);
+                }
                 break;
             case "EDIT":
                 //Trả về giao diện cập nhật sản phẩm
 //                System.out.println("EDIT");
-                request.getRequestDispatcher("admin/edit_product.jsp").forward(request, response);
+
+                if (method.equalsIgnoreCase("get")) {
+                    // trả về giao diện cập nhật sản phẩm
+                    int mahoa = Integer.parseInt(request.getParameter("mahoa"));
+                    request.setAttribute("hoa", hoaDAO.getById(mahoa));
+                    request.setAttribute("dsLoai", loaiDAO.getAll());
+                    request.getRequestDispatcher("admin/edit_product.jsp").forward(request, response);
+                    
+                } else if (method.equalsIgnoreCase("post")) {
+                    int mahoa=Integer.parseInt(request.getParameter("mahoa"));
+                    String tenhoa = request.getParameter("tenhoa");
+                    double gia = Double.parseDouble(request.getParameter("gia"));
+                    Part part = request.getPart("hinh");
+                    int maloai = Integer.parseInt(request.getParameter("maloai"));
+                    String filename=request.getParameter("oldImg");
+                    //b2. Xử lý upload file ảnh
+                    if(part.getSize()>0)
+                    {
+                    String realPath = request.getServletContext().getRealPath("assets/images/products");
+                    filename = Paths.get(part.getSubmittedFileName()).getFileName().toString();
+                    part.write(realPath + "/" + filename);
+                    }
+                    //b3 Sửa sản phẩm vào CSDL
+                    Hoa objUpdate = new Hoa(mahoa, tenhoa, gia, filename, maloai, new Date((new java.util.Date().getTime())));
+                    if (hoaDAO.Update(objUpdate)) {
+                        //thông báo sửa thành công
+                        request.setAttribute("success", "Cập nhật sản phẩm thành công");
+                    } else {
+                        //Thông báo sửa thất bại
+                        request.setAttribute("error", "Cập nhật sản phẩm thất bại");
+                    }
+                    // chuyển tiếp  người dùng về action=LIST để liệt kê lại danh sách sản phẩm
+                    request.getRequestDispatcher("ManageProduct?action=LIST").forward(request, response);
+                }
                 break;
             case "DELETE":
                 //Xử lí xóa sản phẩm
-                System.out.println("DELETE");
+//                System.out.println("DELETE");
+                //b1 Lấy mã sản phẩm.
+                int mahoa = Integer.parseInt(request.getParameter("mahoa"));
+                //b2. Xóa sản phẩm khỏi CSDL
+                if (hoaDAO.Delete(mahoa)) {
+                    //thông báo thêm thành công
+                    request.setAttribute("success", "Thao tác xóa sản phẩm thành công");
+                } else {
+                    //Thông báo xóa thất bại
+                    request.setAttribute("error", "Thao tác xóa sản phẩm thất bại");
+                }
+                // chuyển tiếp  người dùng về action=LIST để liệt kê lại danh sách sản phẩm
+                request.getRequestDispatcher("ManageProduct?action=LIST").forward(request, response);
                 break;
         }
-        
+
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
