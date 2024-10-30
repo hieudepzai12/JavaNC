@@ -54,7 +54,18 @@ public class ManageProduct extends HttpServlet {
             case "LIST":
                 //Trả về giao diện liệt kê danh sách sản phẩm quản trị
 //                System.out.println("LIST");
-                request.setAttribute("dsHoa", hoaDAO.getAll());
+                int pageSize =5;
+                int pageIndex =1;
+                if(request.getParameter("page")!=null)
+                {
+                    pageIndex=Integer.parseInt(request.getParameter("page"));
+                }
+                //tính tổng số trang có thể có
+                int sumOfPage =(int)Math.ceil((double)hoaDAO.getAll().size()/pageSize);
+                
+                request.setAttribute("dsHoa", hoaDAO.getByPage(pageIndex, pageSize));//Chuyển dữ liệu cho JSP
+                request.setAttribute("sumOfPage", sumOfPage);//gửi sumOfPage cho JSP
+                request.setAttribute("pageIndex", pageIndex); //gửi pageIndex cho JSP
                 request.getRequestDispatcher("admin/list_product.jsp").forward(request, response);
                 break;
             case "ADD":
